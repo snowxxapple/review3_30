@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>this问题</title>
+</head>
+<style type="text/css">
+	.bar{
+		list-style: none;
+	}
+	.button{
+		display: inline-block;
+		border:1px solid black;
+	}
+	.bar:hover{
+		cursor: pointer;
+	}
+</style>
+<body>
+<h3>this问题</h3>
+<article>
+	<p>1.this在函数内，那么this指向调用当前函数的对象</p>
+	<p>2.this在函数外，那么this指向window对象</p>
+	<p>3.在事件处理程序中，this指向触发该事件的对象(IE除外)</p>
+	<p>4.在有定时器时，this指向window或者为undefined</p>
+	<p>5.在用了apply和call函数后，被调用函数内部的this为apply和call第一个参数指定的</p>
+</article>
+<ul class='bar'><li class='button'>按钮1</li><li class='button'>按钮2</li><li class='button'>按钮3</li><li class='button'>按钮4</li><li class='button'>按钮5</li></ul>
+</body>
+<script type="text/javascript">
+	//demo1 this在函数内部
+	function Person(name,age){
+		this.name=name;
+		this.age=age;
+		console.log(this);//Person {name: "mm", age: "21"}
+	}
+	var person=new Person('mm','21');//Person()构造函数中的this是指向person的，因此person有了name和age两个属性
+	console.log(person.name);
+	console.log(person.age);
+
+	//demo2 this在函数外部
+	var a=1;
+	console.log(this);//window
+	console.log(this.a);
+
+	//demo3 this在事件处理程序中
+	//DOM0级
+	// window.onload=function(){
+	// var oBtn=document.getElementsByClassName('button');
+	// for(var i=0;i<oBtn.length;i++){
+	// 	oBtn[i].onclick=function(){
+	// 		console.log(this);//按钮
+	// 		console.log(this.innerHTML);
+	// 		}
+	// 	}
+	// }
+	//DOM2级 
+	window.onload=function(){
+	var oBtn=document.getElementsByClassName('button');
+	for(var i=0;i<oBtn.length;i++){
+		//除了IE
+		oBtn[i].addEventListener('click',function(){console.log(this);},false);//当前按钮标签
+		//IE下
+		// oBtn[i].attachEvent('onclick',function(){console.log(this);});//window对象
+	}
+	}
+	//demo4 有定时器存在时
+	// function Aaa(){
+	// 	this.b=12;//this是Aaa()的对象
+	// 	setInterval(this.show,1000);//this是window 并没有这个函数
+	// }
+	
+	// Aaa.prototype.show=function(){//是定义在 window上的 
+	// 	console.log(this.b,'Aaa的this');//undefinde  this是window 因为是window调用了这个函数体 而window上并没有定义属性b
+	// }
+	// var obj=new Aaa();
+
+	//demo5 定时器存在 解决this问题 在定时器函数内嵌套一个匿名函数`
+	function Bbb(){
+		var _this=this;//把当前this->Bbb对象存下来了
+		this.c=33;
+		timer=setInterval(function(){
+			_this.show();
+			console.log(_this,'定时器内部');//定时器内写一个匿名函数，将保存下来的_this值传进去
+		},1000);//调用show方法的是Bbb对象
+	}
+	Bbb.prototype.show=function(){
+		console.log(this.c,'Bbb的this');//33
+	}
+	var obj2=new Bbb();
+	clearInterval(timer);
+	//demo6 apply存在的this指向问题
+	function m(x,y){//
+		y=function(){
+			t=2;//全局变量
+		}
+		console.log(y,'y');
+		return function(){//闭包 没有外部变量的引用是不是不叫闭包？
+			var t=3;//局部变量
+			y();
+			console.log(this.t,'this.t');//window.t=2
+			console.log(t,'t');//要显示的t为局部变量 t=3;
+		}.apply(this,arguments);//this在函数m()内，this指向调用函数m的对象window,所以在匿名函数内部this指向window
+	}
+	m();//返回匿名函数，并执行匿名函数,但此时调用匿名函数的是 window对象
+	//demo7 
+	function n(p,y){//
+		console.log(arguments,'arguments1');
+		y=function(){
+			console.log(p,'传进来的参数');
+			p=2;//改变传进来的参数t
+		}
+		console.log(y,'y');
+		return function(){//闭包 没有外部变量的引用是不是不叫闭包？
+			console.log(arguments,'arguments');
+			console.log(arguments[1]===y);
+			var p=3;//局部变量
+			y();
+			console.log(this.p,'this.p');//window.p为undefined因为没有全局变量
+			console.log(p,'p');//要显示的t为局部变量 p=3;
+		}.apply(this,arguments);//this在函数m()内，this指向调用函数m的对象window,arguments[8,function function]??,所以在匿名函数内部this指向window 
+	}
+	n(8,7);//返回匿名函数,由于匿名函数通过调用apply方法调用了自己，所以匿名函数才能执行，否则返回的就是一个匿名函数并不会执行。
+
+
+</script>
+</html>
